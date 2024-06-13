@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "autodownloader"
+name = "nextcloud-deck-movies-piratebay-downloader"
 version = "0.1.0"
 description = "Download movies from a Nextcloud deck stack with PirateBay"
 authors = ["Marc Partensky <marc.partensky@gmail.com>"]
