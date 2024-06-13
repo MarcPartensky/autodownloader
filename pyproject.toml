@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "autodownloader"
+version = "0.1.0"
+description = "Download movies from a Nextcloud deck stack with PirateBay"
+authors = ["Marc Partensky <marc.partensky@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+tpblite = "^0.8.0"
+nextcloud-deck = "^0.2.1"
+python-dotenv = "^1.0.1"
+pyyaml = "^6.0.1"
+torrentp = "^0.2.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
