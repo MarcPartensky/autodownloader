@@ -7,6 +7,6 @@ COPY requirements.txt ./
 RUN pip install -r requirements.txt
 
 # Code does
-COPY __main__.py ./
+COPY autodownloader/__main__.py ./
 
 ENTRYPOINT ["python", "."]
