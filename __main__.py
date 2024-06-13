@@ -95,7 +95,7 @@ def enrich_description(card: Card, torrent: Torrent | None):
         stack_id=STACK_ID,
         card_id=card.id,
         title=card.title,
-        description=dump(description),
+        description=dump(description) or "",
         owner=card.owner,
     )
     return updated_card
