@@ -114,6 +114,8 @@ def should_download(card: Card, torrent: Torrent | None) -> bool:
     """Should check if label "no torrent" available"""
     if not torrent:
         return False
+    if not os.environ.get("DOWNLOAD"):
+        return False
     # load(card.description)
     return True
 
