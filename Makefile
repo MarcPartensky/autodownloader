@@ -1,7 +1,7 @@
 run:
 	poetry run python .
 up: build
-	docker compose up --force-recreate
+	docker compose up --force-recreate --rm
 push: build
 	docker compose push
 build: export
