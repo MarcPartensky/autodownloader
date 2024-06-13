@@ -1,0 +1,5 @@
+version: "3"
+services:
+  autodownloader:
+    image: marcpartensky/autodownloader
+    build: .
