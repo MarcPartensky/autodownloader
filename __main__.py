@@ -23,7 +23,8 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 BOARD_ID = int(os.environ["NEXTCLOUD_BOARD_ID"])
 STACK_ID = int(os.environ["NEXTCLOUD_STACK_ID"])
 DOWNLOADED_STACK_ID = int(os.environ["NEXTCLOUD_DOWNLOADED_STACK_ID"])
-LABEL_ID = int(os.environ["NEXTCLOUD_LABEL_ID"])
+NOTORRENTS_LABEL_ID = int(os.environ["NEXTCLOUD_NOTORRENTS_LABEL_ID"])
+TITLEWRONG_LABEL_ID = int(os.environ["NEXTCLOUD_TITLEWRONG_LABEL_ID"])
 
 t = TPB(os.environ["TPB_URL"])
 nc = NextCloudDeckAPI(
@@ -67,7 +68,7 @@ def enrich_description(card: Card, torrent: Torrent | None):
     # Check if there is already label "no torrents" so we dont check twice the same card
     if card.labels:
         for label in card.labels:
-            if label.id == LABEL_ID:
+            if label.id == NOTORRENTS_LABEL_ID:
                 return card
 
     # # Otherwise enrich
@@ -77,7 +78,10 @@ def enrich_description(card: Card, torrent: Torrent | None):
     # If no torrent is found add the "no torrents" label
     if not torrent:
         nc.assign_label_to_card(
-            label_id=LABEL_ID, card_id=card.id, board_id=BOARD_ID, stack_id=STACK_ID
+            label_id=NOTORRENTS_LABEL_ID,
+            card_id=card.id,
+            board_id=BOARD_ID,
+            stack_id=STACK_ID,
         )
     else:  # Otherwise enrich descriptions
         if GROQ_API_KEY:
@@ -106,7 +110,7 @@ def enrich_description(card: Card, torrent: Torrent | None):
 #     await func
 
 
-def should_download(card: Card, torrent: Torrent) -> bool:
+def should_download(card: Card, torrent: Torrent | None) -> bool:
     """Should check if label "no torrent" available"""
     if not torrent:
         return False
@@ -157,24 +161,19 @@ def ask(message: str) -> str:
 
 
 def enrich_title(card: Card):
-    "Ask llama3 for the true name of the movie and change it"
-    answer = ask(
-        f"Is this the name of a movie? just give me yes or no: {card.title}"
-    ).lower()
-    if "yes" in answer:
-        return card
-    title = ask(
-        f"Just say the real complete name of this movie and without formulating a sentence: {card.title}",
-    )
-    print("old title:", card.title, "new title:", title)
-    return nc.update_card(
-        board_id=BOARD_ID,
-        stack_id=STACK_ID,
-        card_id=card.id,
-        title=title,
-        description=card.description or "",
-        owner=card.owner,
-    )
+    "Check with llama3 whether it is the true name of the movie otherwise add a label for notice"
+    if GROQ_API_KEY:
+        answer = ask(
+            f"Is this the name of a movie? just give me yes or no: {card.title}"
+        ).lower()
+        if "yes" in answer:
+            return
+        nc.assign_label_to_card(
+            label_id=TITLEWRONG_LABEL_ID,
+            card_id=card.id,
+            board_id=BOARD_ID,
+            stack_id=STACK_ID,
+        )
 
 
 # movie board
@@ -187,15 +186,17 @@ async def main():
     cards = nc.get_cards_from_stack(board_id=BOARD_ID, stack_id=STACK_ID)
     card: Card
     for card in cards:
-        if GROQ_API_KEY:
-            card = enrich_title(card)
-        print("card:", card.title, card.description)
         torrent = get_torrent(card)
+        print("card:", card.title, card.description, torrent)
+
+        enrich_title(card)
         card = enrich_description(card, torrent)
-        if should_download(card, torrent):
-            print("torrent:", torrent)
-            # await download(torrent)  # download one by one pls
-            move_card_downloaded(card)
+
+        if torrent:
+            if should_download(card, torrent):
+                await download(torrent)  # download one by one pls
+                move_card_downloaded(card)
+
         else:
             print("no torrent skip")
     print("done")
